@@ -179,13 +179,14 @@ class RLHFDataset(Dataset):
                         )
                     )
 
+            print(f"Length of dataframe before filtering: {len(dataframe)}")
             dataframe = dataframe.filter(
                 lambda doc: doc2len(doc) <= self.max_prompt_length,
                 num_proc=self.num_workers,
                 desc=f"Filtering prompts longer than {self.max_prompt_length} tokens",
             )
 
-            print(f"filter dataset len: {len(dataframe)}")
+            print(f"Length of dataframe after filtering: {len(dataframe)}")
         return dataframe
 
     def resume_dataset_state(self):
@@ -362,3 +363,9 @@ class RLHFDataset(Dataset):
             return state
 
         return self.__dict__.copy()
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        # Restore dataframe if it was removed during serialization
+        if not self.serialize_dataset and "dataframe" not in self.__dict__:
+            self._read_files_and_tokenize()

@@ -1,0 +1,19 @@
+# WebShop Dataset Configuration for VERL
+# This config defines how to load and use the WebShopDataset class
+
+# Custom dataset class configuration
+custom_cls:
+  path: "verl.utils.dataset.webshop_dataset"
+  name: "WebShopDataset"
+  config:
+    # Path to the scenarios JSON file (absolute path recommended)
+    scenarios_file: "/data/env/lib/repos/tejas_srinivasan/uncertain_webshop_agent/scenario_data/webshop/v4_MANUALLYCURATED_50scenarios_36unachievable_10triggeredprefreveal_29lowerprefbackoff.json"
+    
+    # Optional: Maximum number of scenarios to load (for testing/smaller datasets)
+    # max_scenarios: 10
+    
+    # Optional: Random seed for reproducible scenario selection
+    # random_seed: 42
+
+max_prompt_length: 20000
+max_response_length: 400

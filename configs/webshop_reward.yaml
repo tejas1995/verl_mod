@@ -1,0 +1,15 @@
+# WebShop reward function configuration for VERL
+# This configures the custom reward function for WebShop multi-turn agentic environments
+
+custom_reward_function:
+  path: "verl.utils.reward_score.webshop"
+  name: "compute_score"
+  reward_kwargs:
+    # Required parameters for the reward function (all must be specified)
+    secrets_file: "/data/env/lib/repos/tejas_srinivasan/uncertain_webshop_agent/secrets.yaml"
+    evaluator_model_name: "claude-3-7-sonnet-latest"  # Required: Model for evaluators
+    task_weight: 0.6      # Required: Weight for task completion score (must be >= 0)
+    satisfaction_weight: 0.4  # Required: Weight for user satisfaction score (must be >= 0)
+    # Note: Weights are automatically normalized to sum to 1.0 in the reward function
+    # Both weights must be non-negative and their sum must be positive (assertions will fail otherwise)
+    # Missing any of these keys will result in KeyError exceptions

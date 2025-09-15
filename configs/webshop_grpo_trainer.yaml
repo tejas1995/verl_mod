@@ -1,0 +1,136 @@
+# WebShop GRPO Training Configuration for VERL
+# Simplified configuration for GRPO (Group Relative Policy Optimization)
+
+hydra:
+  searchpath:
+    - file://verl/trainer/config
+
+defaults:
+  - ppo_trainer
+  - _self_
+
+# Data configuration
+data:
+  max_prompt_length: 20000
+  max_response_length: 400
+  train_batch_size: 256
+  return_raw_chat: True
+  filter_overlong_prompts: True
+  truncation: "error"
+  
+  # Custom dataset configuration
+  custom_cls:
+    path: "verl.utils.dataset.webshop_dataset"
+    name: "WebShopDataset"
+    config:
+      scenarios_file: "/data/env/lib/repos/tejas_srinivasan/uncertain_webshop_agent/scenario_data/webshop/v4_MANUALLYCURATED_50scenarios_36unachievable_10triggeredprefreveal_29lowerprefbackoff.json"
+
+# Actor, rollout, and reference model configuration
+actor_rollout_ref:
+  hybrid_engine: True
+  
+  # Model configuration (will be overridden by agent config)
+  model:
+    path: "meta-llama/Llama-2-7b-chat-hf"  # Default, will be replaced
+    use_remove_padding: True
+    enable_gradient_checkpointing: True
+    
+  # Actor configuration
+  actor:
+    strategy: fsdp2  # Distribution strategy: fsdp, fsdp2, or megatron
+    optim:
+      lr: 1e-6
+    ppo_mini_batch_size: 128
+    ppo_micro_batch_size_per_gpu: 8
+    use_kl_loss: True
+    kl_loss_coef: 0.001
+    kl_loss_type: "low_var_kl"
+    entropy_coeff: 0
+    fsdp_config:
+      param_offload: False
+      optimizer_offload: False
+      
+  # Rollout configuration
+  rollout:
+    name: "sglang"
+    tensor_model_parallel_size: 1
+    gpu_memory_utilization: 0.85
+    multi_stage_wake_up: True
+    n: 16
+    over_sample_rate: 0.1
+    mode: "sync"
+    log_prob_micro_batch_size_per_gpu: 32
+    
+    # Multi-turn configuration
+    multi_turn:
+      enable: True
+      max_assistant_turns: 5
+      
+  # Reference policy configuration
+  ref:
+    log_prob_micro_batch_size_per_gpu: 32
+    fsdp_config:
+      param_offload: True
+
+# Critic configuration
+critic:
+  model:
+    path: "meta-llama/Llama-2-7b-chat-hf"  # Default, will be replaced
+  optim:
+    lr: 1e-5
+
+# Reward model configuration
+reward_model:
+  enable: True
+  style: "interaction"
+  
+  # Custom reward function configuration
+  custom_reward_function:
+    path: "verl.utils.reward_score.webshop"
+    name: "compute_score"
+    reward_kwargs:
+      evaluator_model_name: "claude-3-7-sonnet-latest"
+      task_weight: 0.6
+      satisfaction_weight: 0.4
+      secrets_file: "/data/env/lib/repos/tejas_srinivasan/uncertain_webshop_agent/secrets.yaml"
+      
+  # Interaction configuration
+  interaction_kwargs:
+    name: "webshop"
+    env_type: "webshop"
+    user_config: "/data/env/lib/repos/tejas_srinivasan/uncertain_webshop_agent/configs/user_sim/webshop/llama3.1_8b_sft_gpt4otrajs.yaml"
+
+# Algorithm configuration
+algorithm:
+  adv_estimator: "grpo"
+  use_kl_in_reward: False
+
+# Trainer configuration
+trainer:
+  n_gpus_per_node: 1
+  nnodes: 1
+  total_epochs: 10
+  save_freq: 5
+  test_freq: 1
+  val_before_train: True
+  logger: ["console", "wandb"]
+  project_name: "webshop-verl-training"
+  experiment_name: "webshop-grpo-$(date +%Y%m%d-%H%M%S)"
+  
+# Global profiler configuration
+global_profiler:
+  tool: "torch_memory"
+  save_path: "./mem_snapshots"
+  global_tool_config:
+    torch_memory:
+      trace_alloc_max_entries: 100000
+      stack_depth: 32
+
+# Ray configuration for distributed training
+ray_kwargs:
+  ray_init:
+    # Number of CPUs for Ray. Set to null to use all available CPUs.
+    # For SLURM systems, you may want to set this to a specific number.
+    num_cpus: null
+  # Path to save Ray timeline JSON for performance profiling (optional)
+  timeline_json_file: null

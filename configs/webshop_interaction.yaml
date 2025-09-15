@@ -1,0 +1,6 @@
+interaction:
+  - class_name: "verl.interactions.webshop_interaction.WebShopInteraction"
+    name: "webshop"
+    config:
+      env_type: "webshop"
+      user_config: "/data/env/lib/repos/tejas_srinivasan/uncertain_webshop_agent/configs/user_sim/webshop/llama3.1_8b_sft_gpt4otrajs.yaml"  # Path to user config file
